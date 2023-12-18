@@ -32,8 +32,8 @@
 
 ## 运行
 ```bash
-git clone 
-cd 
+https://github.com/GodCount/vue3-konvajs-demo.git
+cd vue3-konvajs-demo
 yarn install
 yarn dev
 ```
