@@ -13,9 +13,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "preserve",
-    "types": [
-      "@godcount/unit-conversion"
-    ]
 
     /* Linting */
     // "strict": true,

@@ -28,7 +28,7 @@
 - 马赛克画笔
 
 ## 预览
-![预览](./public/result.png)
+<a href="https://godcount.github.io/vue3-konvajs-demo/">vue3-konvajs-demo</a>
 
 ## 运行
 ```bash

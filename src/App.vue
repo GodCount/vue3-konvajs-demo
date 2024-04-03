@@ -449,8 +449,7 @@ function editText(text: Konva.Text): () => boolean {
 
 
 
-
-const shapes = ref(["Rect", "Circle", "Ellipse", "Triangle", "Line", "Arrow", "Arrow2", "Brush", "Eraser", "Text", "Mosaic", "MosaicBrush", "LineFollow", "None"]);
+const shapes = ref(["Rect", "Circle", "Ellipse", "Triangle", "Line", "Arrow", "Arrow2", "Brush", "Eraser", "Text", "Mosaic", "MosaicBrush", "None"]);
 const shape = ref("Rect");
 const option = reactive({
   fill: false,
@@ -475,15 +474,6 @@ let down = false;
 let move = false;
 let transformer: Konva.Transformer | LineTransformer | BrushTransformer;
 let shapeObject: Konva.Shape;
-let lineFollow = new Konva.Line({
-  points: [],
-  stroke: option.color,
-  strokeWidth: 5,
-  lineCap: 'round',
-  lineJoin: 'round',
-  hitFunc: (con, shape) => { },
-});
-
 
 
 
@@ -1057,23 +1047,21 @@ function computedMosaic(pixelSize = 8) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-function loadBackgroundImage() {
-  const image = new Image();
-  image.src = "/screenshot.png";
-  image.onload = function () {
+function loadBackgroundImage(image: HTMLImageElement) {
+  if (!backgroundImage) {
     backgroundImage = new Konva.Image({
       image,
       x: 0,
       y: 0,
       width: window.innerWidth,
       height: window.innerHeight,
-      scaleX: 1.5,
-      scaleY: 1.5,
+      scaleX: 1,
+      scaleY: 1,
       hitFunc: (ctx, shape) => { }
     });
     backgroundLayer.add(backgroundImage);
-    backgroundLayer.add(lineFollow);
   }
+  backgroundImage.setAttr("image", image);
 }
 
 
@@ -1090,21 +1078,7 @@ onMounted(() => {
   drawboard.add(cutLayer);
 
 
-  loadBackgroundImage();
-
-
   let mx = 0, my = 0;
-  let lineFollowAnim = new Konva.Animation((frame) => {
-    const points = lineFollow.points().concat(mx, my);
-    if (frame && points.length > 50) {
-      points.splice(0, 2);
-    }
-    lineFollow.points(points);
-  }, boardLayer);
-
-
-
-
   let x = 0;
   let y = 0;
 
@@ -1135,7 +1109,7 @@ onMounted(() => {
     removeTransformer();
 
 
-    if (["LineFollow", "None"].includes(shape.value)) return;
+    if (["None"].includes(shape.value)) return;
 
 
     shapeObject = createShape(shape.value, { x, y }, {
@@ -1241,12 +1215,6 @@ onMounted(() => {
 
     if (name == "MosaicBrush") {
       shapeObject.setAttr("points", shapeObject.getAttr("points").concat([event.evt.x, event.evt.y]));
-    }
-
-    if (shape.value == "LineFollow") {
-      if (!lineFollowAnim.isRunning()) lineFollowAnim.start();
-    } else if (lineFollowAnim.isRunning()) {
-      lineFollowAnim.stop();
     }
 
   });
@@ -1429,7 +1397,6 @@ function antiColor(color: string) {
 }
 
 watch(() => option.color, (value) => {
-  lineFollow.setAttr("stroke", value);
   if (transformer && transformer.nodes().length > 0) {
     transformer.nodes().forEach((shape) => {
       if (["Arrow", "Arrow2"].includes(shape.name())) {
@@ -1490,6 +1457,24 @@ const outputJSON = function () {
 
 
 
+function handleImageChange(inputEvent: any) {
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    if (event.target && event.target.result) {
+      const image = new Image();
+      image.src = event.target.result as string;
+      image.onload = function () {
+        loadBackgroundImage(image);
+      }
+    }
+    if (inputEvent.target.value) {
+      inputEvent.target.value = "";
+    }
+  }
+  reader.readAsDataURL(inputEvent.target.files[0]);
+}
+
+
 
 </script>
 
@@ -1520,6 +1505,12 @@ const outputJSON = function () {
       <button @click="clearCanvas">清空画板</button>
       <button @click="toggleVisible">隐藏/显示</button>
       <button @click="outputJSON">打印json</button>
+      <button>
+        <label for="image-file">
+          设置封面
+          <input id="image-file" type="file" accept="image/*" @change="handleImageChange" style="display: none" />
+        </label>
+      </button>
     </div>
     <div class="shape">
       <div>
@@ -1530,8 +1521,9 @@ const outputJSON = function () {
       </div>
     </div>
     <div class="shape-list">
-      <button :class="{ acitve: shape == item }" v-for="item, index of shapes" @click="switchShape(item)">{{ item
-      }}</button>
+      <button :class="{ acitve: shape == item }" v-for="item, index of shapes" @click="switchShape(item)">
+        {{ item }}
+      </button>
     </div>
     <div class="func-box">
       <label for="fill">
